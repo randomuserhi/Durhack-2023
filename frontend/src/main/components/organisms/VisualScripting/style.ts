@@ -11,10 +11,11 @@ RHU.module(new Error(), "components/organsisms/VisualScripting/style", {
 }, function({ Style }) {
     const style = Style(({ style }) => {
         const wrapper = style.class`
+        position: relative;
         width: 100%;
         height: 100%;
-        display: flex;
-        flex-direction: column;
+
+        background-color: #1e1e1e;
         `;
 
         return {

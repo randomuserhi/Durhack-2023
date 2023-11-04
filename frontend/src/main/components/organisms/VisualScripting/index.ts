@@ -5,13 +5,13 @@ declare namespace RHU {
 
     namespace Macro {
         interface TemplateMap {
-            "organisms/VisualScripting": Organisms.Welcome;
+            "organisms/VisualScripting": Organisms.VisualScripting;
         }
     }
 }
 
 declare namespace Organisms {
-    interface Workspace extends HTMLDivElement {
+    interface VisualScripting extends HTMLDivElement {
     }
 }
 
@@ -20,11 +20,11 @@ RHU.module(new Error(), "components/organisms/VisualScripting", {
 }, function({ 
     Macro, style,
 }) {
-    const Workspace = Macro((() => {
-        const Workspace = function(this: Organisms.TabPages) {
-        } as RHU.Macro.Constructor<Organisms.Welcome>;
+    const VisualScripting = Macro((() => {
+        const VisualScripting = function(this: Organisms.VisualScripting) {
+        } as RHU.Macro.Constructor<Organisms.VisualScripting>;
 
-        return Workspace;
+        return VisualScripting;
     })(), "organisms/VisualScripting", //html
         `
         `, {
@@ -32,5 +32,5 @@ RHU.module(new Error(), "components/organisms/VisualScripting", {
             `<div class="${style.wrapper}"></div>`
         });
 
-    return Workspace;
+    return VisualScripting;
 });

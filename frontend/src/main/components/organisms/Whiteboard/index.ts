@@ -5,13 +5,13 @@ declare namespace RHU {
 
     namespace Macro {
         interface TemplateMap {
-            "organisms/Whiteboard": Organisms.Welcome;
+            "organisms/Whiteboard": Organisms.Whiteboard;
         }
     }
 }
 
 declare namespace Organisms {
-    interface Workspace extends HTMLDivElement {
+    interface Whiteboard extends HTMLDivElement {
     }
 }
 
@@ -22,7 +22,7 @@ RHU.module(new Error(), "components/organisms/Whiteboard", {
 }) {
     const Workspace = Macro((() => {
         const Workspace = function(this: Organisms.TabPages) {
-        } as RHU.Macro.Constructor<Organisms.Welcome>;
+        } as RHU.Macro.Constructor<Organisms.Whiteboard>;
 
         return Workspace;
     })(), "organisms/Whiteboard", //html

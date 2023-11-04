@@ -5,7 +5,7 @@ declare namespace RHU {
 
     namespace Macro {
         interface TemplateMap {
-            "organisms/Workspace": Organisms.Welcome;
+            "organisms/Workspace": Organisms.Workspace;
         }
     }
 }
@@ -21,8 +21,8 @@ RHU.module(new Error(), "components/organisms/Workspace", {
     Macro, style,
 }) {
     const Workspace = Macro((() => {
-        const Workspace = function(this: Organisms.TabPages) {
-        } as RHU.Macro.Constructor<Organisms.Welcome>;
+        const Workspace = function(this: Organisms.Workspace) {
+        } as RHU.Macro.Constructor<Organisms.Workspace>;
 
         return Workspace;
     })(), "organisms/Workspace", //html
