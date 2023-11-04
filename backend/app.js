@@ -8,16 +8,17 @@ app.use(cors());
 app.use(express.static("static"));
 app.use(express.json());
 
-/*
+
 app.get("/", function(req, resp) {
-    resp.sendFile(`${__dirname}/client-page/index.html`);
+    resp.sendFile(`${__dirname}/static/index.html`);
 });
 
-app.use(express.static("client-page"));
-app.use(express.json());
+// app.use(express.static("client-page"));
+// app.use(express.json());
 
+/*
 app.get("/client-page/", function(req, resp) {
-    resp.sendFile(`${__dirname}/static/main.html`);
+    resp.sendFile(`${__dirname}/static/index.html`);
 });
 */
 
