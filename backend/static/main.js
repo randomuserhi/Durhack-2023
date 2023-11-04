@@ -9,7 +9,7 @@ function submitForm(e) {
     window.formData = new FormData();
     formData.append("files", files.files[0]);
     
-    fetch("http://127.0.0.1:7676/logs", {
+    fetch("http://127.0.0.1:7676/christopher/upload", {
         method: 'POST',
         body: formData,
     })

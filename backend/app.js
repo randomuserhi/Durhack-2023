@@ -19,49 +19,77 @@ app.use(express.urlencoded({
 const cors = require('cors');
 app.use(cors());
 
-
 app.use(express.static("static"));
 app.use(express.json());
 
 // importing object 'workspace' with functions returned from workspaces.js
-const workspace = require('./workspaces.js');
+const workarea = require('./workspaces.js');
 
 app.get("/", function(req, resp) {
     resp.sendFile(`${__dirname}/static/index.html`);
 });
 
-// app.use(express.static("client-page"));
-// app.use(express.json());
+// Setting up WebSocket
+
+
+
+
+
+
+// POST and GET Functions
 
 /*
-app.get("/client-page/", function(req, resp) {
-    resp.sendFile(`${__dirname}/static/index.html`);
-});
+GET /{workspace_name} => return details in a js object for the given workspace (for now this is just the workspace name), if doesnt exist return 404 or someshit
 */
 
-app.post("/logs", upload.single("files"), function(req, resp){
+app.get("/:workspace", function(req, resp){
+    
+    try{
+        workarea.getWorkspace(req.params.workspace, (data) => {
+            if (data === undefined){
+                resp.send(JSON.stringify("Error: Workspace already exists or couldn't parse JSON string into object"))
+            } else {
+                resp.send(JSON.stringify(data))
+            }
+        })
+    } catch(e) {
+        console.log(e);
+        
+        resp.send(JSON.stringify("Error receiving workspace data. please try again later."));
+    }
+});
+
+/*
+POST /{workspace_name} => create a new workspace of the given name (if it already exists, return bad request error)
+*/
+
+app.post("/:workspace", function(req, resp){
+    try{
+        workarea.createWorkspace(req.params.workspace)
+        resp.send(JSON.stringify("New Workspace created."))
+    } catch(e) {
+        console.log(e)
+        
+        resp.send(JSON.stringify("Error creating new Workspace, please try again later."));
+    }
+});
+
+/*
+POST /{workspace_name}/upload => Uploads file to a specified workspace
+*/
+
+app.post("/:workspace/upload", upload.single("files"), function(req, resp){
+    console.log(req.params)
     console.log("Log File Recieved")
     try{
         resp.send(JSON.stringify("Log File successfully uploaded."));
+        // Move Log File to correct workspace (req.params.workspace)
     } catch(e) {
         console.log(e)
         
         resp.send(JSON.stringify("Error submitting log file, please try again later."));
     }    
 });
-
-/*
-app.get("/refresh", function(req, resp){
-    
-    try{
-        resp.send(JSON.stringify(data));
-        data = [];
-    } catch(e) {
-        console.log(e);
-        resp.send(JSON.stringify("Error sending heatmap data. please try again later."));
-    }
-});
-*/
 
 
 module.exports = app;
