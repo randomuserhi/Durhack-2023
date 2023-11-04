@@ -23,6 +23,8 @@ app.use(cors());
 app.use(express.static("static"));
 app.use(express.json());
 
+// importing object 'workspace' with functions returned from workspaces.js
+const workspace = require('./workspaces.js');
 
 app.get("/", function(req, resp) {
     resp.sendFile(`${__dirname}/static/index.html`);
