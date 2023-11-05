@@ -6,12 +6,16 @@ const fs = require('fs');
 require('log-timestamp');
 
 let activeWorkspaces = {};
-fs.readFile('watchlist.json', 'utf8', function(err, data) {
-    if (err) {
-        throw err;
-    }
-    activeWorkspaces = JSON.parse(data);
-});
+activeWorkspaces = JSON.parse(fs.readFileSync('watchlist.json'));
+const cleanAW = (aws) => {
+    let res = {};
+    for (const [k, v] of Object.entries(aws)) {
+        res[k] = {
+            ...v,
+            clients: []
+        }
+    } return res;
+}
 let connectedClients = {}
 let id = 0
 
@@ -48,28 +52,53 @@ wss.on('connection', (ws) => {
     console.log(`New user number ${ws.id} has connected`)
     ws.on('message', (message) => {
         const receivedData = JSON.parse(message);
-        activeWorkspaces[receivedData].clients.push(ws.id);
-        fs.writeFile("watchlist.json", JSON.stringify(activeWorkspaces), () => {})
+        
+        if (receivedData.type === "join") {
+            activeWorkspaces[receivedData.content].clients.push(ws.id);
+            console.log(cleanAW(activeWorkspaces));
+            fs.writeFile("watchlist.json", JSON.stringify(cleanAW(activeWorkspaces)), () => {})
+        
+            ws.send(JSON.stringify({
+                workspace: receivedData.content,
+                type: "data",
+                content: activeWorkspaces[receivedData.content].files.map(f => ({
+                    name: f.replace(/.*\//, ''),
+                    content: fs.readFileSync(f).toString()
+                }))
+                }));
+        };
+        
+       
     })
     ws.on('close', () => {
-        connectedClients.delete(ws.id);
-        for (let space in activeWorkspaces) {
+        delete connectedClients[ws.id];
+        for (let space of Object.values(activeWorkspaces)) {
             space.clients = space.clients.filter((id) => {
                 return id != ws.id;
             });
         };
     });
-    for (let space in activeWorkspaces) {
-        for (let file in space.files) {
-            fs.watchFile(file), (curr, prev) => {
-                for (let client in space.clients) {
-                    client.send(file);
-                };
-            }; 
-        };
-    };
     ws.on('error', console.error);
 });
+console.log(activeWorkspaces);
+for (let [workspace, space] of Object.entries(activeWorkspaces)) {
+    for (let file of space.files) {
+        console.log("watch events");
+        fs.watchFile(file, (curr, prev) => {
+            console.log(`${file} changed`);
+            for (let client of space.clients) {
+                connectedClients[client].send(JSON.stringify({
+                    workspace,
+                    type: "data",
+                    content: [{
+                        name: file.replace(/.*\//, ''),
+                        content: fs.readFileSync(file).toString()
+                    }]
+                }));
+            };
+        }); 
+    };
+};
 
 // Serving Webpage
 app.get("/", function(req, resp) {
@@ -116,7 +145,7 @@ app.post("/:workspace", function(req, resp){
                 "files": []
             };
         console.log(activeWorkspaces)
-        fs.writeFile("watchlist.json", JSON.stringify(activeWorkspaces), () => {})
+        fs.writeFile("watchlist.json", JSON.stringify(cleanAW(activeWorkspaces)), () => {})
         resp.send(JSON.stringify("New Workspace created."));
     } catch(e) {
         console.log(e);
@@ -147,7 +176,19 @@ app.post("/:workspace/upload", upload.single("files"), function(req, resp){
         if (!activeWorkspaces[req.params.workspace].files.some((f) => f == file)) {
             activeWorkspaces[req.params.workspace].files.push(file);
         }
-        fs.writeFile("watchlist.json", JSON.stringify(activeWorkspaces), () => {})
+        fs.writeFile("watchlist.json", JSON.stringify(cleanAW(activeWorkspaces)), () => {})
+        fs.watchFile(file, (curr, prev) => {
+            for (let client of activeWorkspaces[req.params.workspace].clients) {
+                connectedClients[client].send(JSON.stringify({
+                    workspace: req.params.workspace,
+                    type: "data",
+                    content: [{
+                        name: file.replace(/.*\//, ''),
+                        content: fs.readFileSync(file).toString()
+                    }]
+                }));
+            }
+        })
         resp.send(JSON.stringify("Log File successfully uploaded."));
         
     } catch(e) {
