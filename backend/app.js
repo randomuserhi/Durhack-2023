@@ -1,6 +1,10 @@
 const express = require("express");
 const app = express();
+let activeWorkspaces = JSON.stringify("watchlist.JSON")
+let connectedClients = {}
+let id = 0
 
+// Initialising Multer and storage locations
 const multer = require("multer");
 var storage = multer.diskStorage({
     destination: 'uploads/',
@@ -19,21 +23,53 @@ app.use(express.urlencoded({
 const cors = require('cors');
 app.use(cors());
 
-app.use(express.static("static"));
-app.use(express.json());
-
 // importing object 'workspace' with functions returned from workspaces.js
 const workarea = require('./workspaces.js');
 
+// Setting up WebSocket
+const WebSocket = require('ws')
+const wss = new WebSocket.Server({ port: 3677 })
+
+// Setting up fs
+const fs = require('fs');
+require('log-timestamp');
+
+// Setting up WebSocketServer to handle clients
+wss.on('connection', (ws) => {
+    ws.id = id++
+    connectedClients[ws.id] = ws;
+    console.log("New user number ${ws.id} has connected")
+    ws.on('message', (message) => {
+        const receivedData = JSON.parse(message);
+        activeWorkspaces[receivedData].clients.append(ws.id);
+    })
+    ws.on('close', () => {
+        connectedClients.delete(ws.id);
+        for (let space in activeWorkspaces) {
+            space.clients = space.clients.filter((id) => {
+                return id != ws.id;
+            });
+        };
+    });
+    for (let space in activeWorkspaces) {
+        for (let file in space.files) {
+            fs.watchFile(file), (curr, prev) => {
+                for (let client in space.clients) {
+                    client.send(file);
+                };
+            }; 
+        };
+    };
+    ws.on('error', console.error);
+});
+
+// Serving Webpage
 app.get("/", function(req, resp) {
     resp.sendFile(`${__dirname}/static/index.html`);
 });
 
-// Setting up WebSocket
-
-
-
-
+app.use(express.static("static"));
+app.use(express.json());
 
 
 // POST and GET Functions
