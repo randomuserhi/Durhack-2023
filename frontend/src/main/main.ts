@@ -17,26 +17,16 @@ interface App extends HTMLDivElement
 
 RHU.module(new Error(), "Main", { 
     Style: "rhu/style", Macro: "rhu/macro",
-    exampleComponent: "components/organisms/exampleComponent"
+    TabPages: "components/organisms/TabPages"
 }, function({ 
-    Style, Macro, exampleComponent 
+    Style, Macro, TabPages 
 }) {
     const style = Style(({ style }) => {
         const wrapper = style.class`
-        display: flex;
-        gap: 10px;
         width: 100%;
         height: 100%;
-        background-color: blue;
-        padding: 10px;
-        `;
 
-        style`
-        ${wrapper}>div {
-            width: 100%;
-            height: 10px;
-            background-color: white;
-        }
+        font-family: IBM Plex Sans;
         `;
 
         return {
@@ -53,7 +43,7 @@ RHU.module(new Error(), "Main", {
         return App;
     })(), "App", //html
         `
-        <rhu-macro rhu-type="${exampleComponent}"></rhu-macro>
+        <rhu-macro rhu-type="${TabPages}"></rhu-macro>
         `, {
             element: //html
             `<div class="${style.wrapper}"></div>`
