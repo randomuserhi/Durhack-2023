@@ -1,6 +1,13 @@
 declare namespace RHU {
     interface Modules {
-        "VisualScripting": void;
+        "VisualScripting": {
+            compileScript(script: VisualScripting.Script): Map<string, Scripting.Dataframe | undefined>;
+            define(macro: string, func: (input: { 
+                data?: Scripting.Dataframe; 
+                metadata: any;
+            }) => Scripting.Dataframe | undefined): void;
+            moduleDefinitions: Map<string, Scripting.ModuleDef>;
+        };
     }
 }
 
@@ -19,7 +26,7 @@ declare namespace Scripting {
     interface Module {
         id: string;
         dependencies: Set<string>;
-        func: (data?: Dataframe) => Dataframe;
+        func: (data?: Dataframe) => Dataframe | undefined;
     }
 }
 
@@ -50,8 +57,6 @@ declare namespace VisualScripting {
 RHU.module(new Error(), "VisualScripting", {
 }, function({ 
 }) {
-    const moduleDefinitions = new Map<string, Scripting.ModuleDef>();
-
     const loaded = new Set<string>();
     const loadNodes = (nodes: {
         src: string;
@@ -71,6 +76,16 @@ RHU.module(new Error(), "VisualScripting", {
             script.src = node.src;
             document.head.append(script);
         }
+    };
+
+    const moduleDefinitions = new Map<string, Scripting.ModuleDef>();
+    const define = (macro: string, func: (input: { 
+        data?: Scripting.Dataframe; 
+        metadata: any;
+    }) => Scripting.Dataframe) => {
+        moduleDefinitions.set(macro, {
+            func
+        });
     };
 
     const compileScript = (script: VisualScripting.Script) => {
@@ -94,12 +109,12 @@ RHU.module(new Error(), "VisualScripting", {
         }
 
         // execute modules
-        const waiting: Scripting.Module[] = [];
-        const cache = new Map<string, Scripting.Dataframe>();
-        for (const module of modules.values()) {
+        let waiting: Scripting.Module[] = [];
+        const cache = new Map<string, Scripting.Dataframe | undefined>();
+        const execute = (module: Scripting.Module) => {
             if (module.dependencies.size === 0) {
                 module.func();
-                continue;
+                return;
             }
 
             const missing: string[] = [];
@@ -111,7 +126,7 @@ RHU.module(new Error(), "VisualScripting", {
 
             if (missing.length === 0) {
                 waiting.push(module);
-                continue;
+                return;
             }
 
             const join: Scripting.Dataframe = {
@@ -122,8 +137,29 @@ RHU.module(new Error(), "VisualScripting", {
             }
 
             cache.set(module.id, module.func(join));
-
-            // TODO(randomuserhi): Reconcile shit
         }
+
+        for (const module of modules.values()) {
+            execute(module);
+
+            let oldWaiting: Scripting.Module[];
+            do 
+            {
+                oldWaiting = waiting;
+                waiting = [];
+                for (const module of oldWaiting) {
+                    execute(module);
+                }
+            }
+            while(waiting.length !== oldWaiting.length);
+        }
+
+        return cache;
+    };
+
+    return {
+        define,
+        compileScript,
+        moduleDefinitions
     };
 });
