@@ -13,8 +13,7 @@ RHU.module(new Error(), "components/organsisms/Workspace/style", {
         const wrapper = style.class`
         width: 100%;
         height: 100%;
-        display: flex;
-        flex-direction: column;
+        background-color: #1e1e1e;
         `;
 
         return {
