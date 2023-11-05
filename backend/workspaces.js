@@ -60,38 +60,19 @@ function getWorkspace(dirName, callback) {
 }
 
 
-function moveFile(fSource, dirName, toServer) {
+function moveFile(fSource, toServer, dirName=null  ) {
 	// fSource is file directory, toServer = true to send to server,
 	// toServer = false to delete from server, dirName is workspace name if sending to server
 	//  sending file to server
 	if (toServer) {
 		const fName = fSource.replace(/.*\//, '');
-		fs.move(fSource, `workspaces/${dirName}/files/${fName}`, { overwrite: true }, (err) => {
+        console.log(fSource);
+        console.log(fName);
+        console.log(`/workspaces/${dirName}/files/${fName}`)
+		fs.move(fSource, `./workspaces/${dirName}/files/${fName}`, { overwrite: true }, (err) => {
 			if (err) {
+                console.log(err);
 				console.error("Source file or destination does not exist");
-			}
-			else{
-				fs.readFile(`watchlist.json`, "UTF-8", (err, jsonString) => {
-					if (err){
-						console.error("No watchlist.json file exists");
-					}
-					else{
-						
-						let wData = JSON.parse(jsonString);
-						
-						if (!(dirName in wData)){
-							wData[dirName] = {
-									"clients": [],
-									"files": []
-								};
-						}
-						
-						wData[dirName]["files"].push(`workspaces/${dirName}/files/${fName}`);
-
-						fs.writeFileSync(`watchlist.json`, JSON.stringify(wData), () => {});
-						console.log("Successfully moved file");
-					}						
-				});
 			}
 		});
 	}

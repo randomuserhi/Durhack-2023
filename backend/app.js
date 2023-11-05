@@ -1,6 +1,17 @@
 const express = require("express");
 const app = express();
-let activeWorkspaces = JSON.stringify("watchlist.JSON")
+
+// Setting up fs
+const fs = require('fs');
+require('log-timestamp');
+
+let activeWorkspaces = {};
+fs.readFile('watchlist.json', 'utf8', function(err, data) {
+    if (err) {
+        throw err;
+    }
+    activeWorkspaces = JSON.parse(data);
+});
 let connectedClients = {}
 let id = 0
 
@@ -30,18 +41,15 @@ const workarea = require('./workspaces.js');
 const WebSocket = require('ws')
 const wss = new WebSocket.Server({ port: 3677 })
 
-// Setting up fs
-const fs = require('fs');
-require('log-timestamp');
-
 // Setting up WebSocketServer to handle clients
 wss.on('connection', (ws) => {
     ws.id = id++
     connectedClients[ws.id] = ws;
-    console.log("New user number ${ws.id} has connected")
+    console.log(`New user number ${ws.id} has connected`)
     ws.on('message', (message) => {
         const receivedData = JSON.parse(message);
-        activeWorkspaces[receivedData].clients.append(ws.id);
+        activeWorkspaces[receivedData].clients.push(ws.id);
+        fs.writeFile("watchlist.json", JSON.stringify(activeWorkspaces), () => {})
     })
     ws.on('close', () => {
         connectedClients.delete(ws.id);
@@ -102,9 +110,16 @@ POST /{workspace_name} => create a new workspace of the given name (if it alread
 app.post("/:workspace", function(req, resp){
     try{
         workarea.createWorkspace(req.params.workspace)
-        resp.send(JSON.stringify("New Workspace created."))
+        console.log(activeWorkspaces)
+        activeWorkspaces[req.params.workspace] = {
+                "clients": [],
+                "files": []
+            };
+        console.log(activeWorkspaces)
+        fs.writeFile("watchlist.json", JSON.stringify(activeWorkspaces), () => {})
+        resp.send(JSON.stringify("New Workspace created."));
     } catch(e) {
-        console.log(e)
+        console.log(e);
         
         resp.send(JSON.stringify("Error creating new Workspace, please try again later."));
     }
@@ -115,11 +130,26 @@ POST /{workspace_name}/upload => Uploads file to a specified workspace
 */
 
 app.post("/:workspace/upload", upload.single("files"), function(req, resp){
+    console.log(req.file.originalname)
     console.log(req.params)
+    
     console.log("Log File Recieved")
     try{
-        resp.send(JSON.stringify("Log File successfully uploaded."));
         // Move Log File to correct workspace (req.params.workspace)
+        workarea.moveFile(`./uploads/${req.file.originalname}`, true, req.params.workspace)
+        const file = `./workspaces/${req.params.workspace}/files/${req.file.originalname}`;
+        if (!(req.params.workspace in activeWorkspaces)) {
+            activeWorkspaces[req.params.workspace] = {
+                clients: [],
+                files: []
+            };
+        }
+        if (!activeWorkspaces[req.params.workspace].files.some((f) => f == file)) {
+            activeWorkspaces[req.params.workspace].files.push(file);
+        }
+        fs.writeFile("watchlist.json", JSON.stringify(activeWorkspaces), () => {})
+        resp.send(JSON.stringify("Log File successfully uploaded."));
+        
     } catch(e) {
         console.log(e)
         
