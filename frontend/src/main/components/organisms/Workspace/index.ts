@@ -18,15 +18,20 @@ declare namespace Organisms {
 
         name: string;
         files: Map<string, string>;
+        vs: Organisms.VisualScripting;
     }
 }
 
 RHU.module(new Error(), "components/organisms/Workspace", { 
     Macro: "rhu/macro", style: "components/organsisms/Workspace/style",
-    App: "App"
+    App: "App",
+    VisualScripting: "components/organisms/VisualScripting",
+    Monaco: "components/organisms/Monaco"
 }, function({ 
     Macro, style,
-    App
+    App,
+    VisualScripting,
+    Monaco
 }) {
     const watching = new Set<Organisms.Workspace>();
     App.ws.addEventListener("message", (e) => {
@@ -39,6 +44,7 @@ RHU.module(new Error(), "components/organisms/Workspace", {
         const Workspace = function(this: Organisms.Workspace) {
             watching.add(this);
             this.files = new Map();
+            this.vs.workspace = this;
         } as RHU.Macro.Constructor<Organisms.Workspace>;
         Workspace.prototype.init = function(name) {
             this.name = name;
@@ -50,9 +56,13 @@ RHU.module(new Error(), "components/organisms/Workspace", {
             }
 
             if (data.type === "data") {
+                console.log("received data");
+                console.log(data.content);
                 for (const f of data.content) {
                     this.files.set(f.name, f.content);
                 }
+
+                this.vs.execute();
             }
         };
 
@@ -64,6 +74,7 @@ RHU.module(new Error(), "components/organisms/Workspace", {
         return Workspace;
     })(), "organisms/Workspace", //html
         `
+        <rhu-macro rhu-id="vs" rhu-type="${VisualScripting}"></rhu-macro>
         `, {
             element: //html
             `<div class="${style.wrapper}"></div>`

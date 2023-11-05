@@ -12,7 +12,7 @@ declare namespace RHU {
 
 declare namespace Organisms {
     interface TabPages extends HTMLDivElement {
-        createTab(name: string, content: Node): Atoms.TabList.Item;
+        createTab(name: string, content: globalThis.Node): Atoms.TabList.Item;
 
         tablist: Atoms.TabList;
         content: HTMLDivElement;
@@ -44,6 +44,7 @@ RHU.module(new Error(), "components/organisms/TabPages", {
                 if ((content as Organisms.Workspace).destructor) {
                     (content as Organisms.Workspace).destructor();
                 }
+                this.content.replaceChildren();
             });
             return item;
         };
